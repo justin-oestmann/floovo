@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MediaTinder</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+</head>
+
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{{ url_for('index') }}">
+                <i class="bi bi-images"></i> MediaTinder
+            </a>
+            <div class="collapse navbar-collapse">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <span class="badge bg-primary">
+                            <i class="bi bi-folder"></i> Media: {{ stats.media.count }} Dateien ({{ stats.media.size }}
+                            MB)
+                        </span>
+                    </li>
+                    <li class="nav-item ms-3">
+                        <span class="badge bg-success">
+                            <i class="bi bi-check-circle"></i> Behalten: {{ stats.behalten.count }} Dateien ({{
+                            stats.behalten.size }} MB)
+                        </span>
+                    </li>
+                    <li class="nav-item ms-3">
+                        <span class="badge bg-danger">
+                            <i class="bi bi-trash"></i> Löschen: {{ stats.loeschen.count }} Dateien ({{
+                            stats.loeschen.size }} MB)
+                        </span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <h1><i class="bi bi-camera"></i> MediaTinder</h1>
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+        <div class="alert alert-warning">
+            <i class="bi bi-exclamation-triangle"></i> {{ messages[0] }}
+        </div>
+        {% endif %}
+        {% endwith %}
+        <div class="row">
+            <div class="col-md-8 offset-md-2">
+                <div id="analyse-status">
+                    {% if analyse_abgeschlossen %}
+                    <div class="alert alert-success text-center">
+                        <i class="bi bi-check-circle"></i> <strong>Analyse abgeschlossen!</strong> Sie können jetzt mit
+                        dem Sortieren beginnen.
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info text-center">
+                        <i class="bi bi-hourglass-split"></i> <strong>Analyse läuft...</strong> Ähnliche Bilder werden
+                        gesucht. Bitte warten Sie.
+                        <div id="analyse-details" class="mt-2">
+                            <i class="bi bi-bar-chart"></i> 0 von {{ stats.media.count }} Medien wurden analysiert.
+                        </div>
+                    </div>
+                    <div class="progress mt-3">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar"
+                            style="width: 0%;" id="progress-bar"></div>
+                    </div>
+                    {% endif %}
+                </div>
+                <a href="{{ url_for('sort_view') }}" id="sortieren-button" class="btn btn-primary btn-lg w-100 mt-3" {%
+                    if not analyse_abgeschlossen %}disabled{% endif %}>
+                    <i class="bi bi-play-circle"></i> Sortieren starten
+                </a>
+            </div>
+        </div>
+    </div>
+    <script>
+        function updateProgress() {
+            fetch("{{ url_for('progress') }}")
+                .then(response => response.json())
+                .then(data => {
+                    const progressBar = document.getElementById("progress-bar");
+                    const analyseDetails = document.getElementById("analyse-details");
+                    const sortierenButton = document.getElementById("sortieren-button");
+                    const analyseStatus = document.getElementById("analyse-status");
+
+                    progressBar.style.width = data.progress + "%";
+                    progressBar.textContent = data.progress + "%";
+                    analyseDetails.innerHTML = `<i class="bi bi-bar-chart"></i> ${data.analysiert} von ${data.gesamt} Medien wurden analysiert.`;
+
+                    if (data.progress < 100) {
+                        setTimeout(updateProgress, 500);
+                    } else {
+                        // Analyse abgeschlossen
+                        analyseStatus.innerHTML = `
+                        <div class="alert alert-success text-center">
+                            <i class="bi bi-check-circle"></i> <strong>Analyse abgeschlossen!</strong> Sie können jetzt mit dem Sortieren beginnen.
+                        </div>`;
+                        sortierenButton.disabled = false;
+                    }
+                });
+        }
+
+        {% if not analyse_abgeschlossen %}
+        updateProgress();
+        {% endif %}
+    </script>
+</body>
+
+</html>
