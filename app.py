@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, send_from_directory, flash, jsonify
 import os
+from werkzeug.utils import secure_filename
 from PIL import Image
 import imagehash
 import threading
@@ -12,10 +13,13 @@ Image.MAX_IMAGE_PIXELS = None
 app = Flask(__name__)
 app.secret_key = "supersecretkey"  # Für Flash-Nachrichten
 
-# Ordnerpfade
+# Feste Ordnerpfade
 MEDIA_FOLDER = "static/media"
 BEHALTEN_FOLDER = "behalten"
 LOESCHEN_FOLDER = "loeschen"
+
+# Erlaubte Dateitypen für den Upload
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
 
 # Globale Variablen
 analyse_ergebnisse = {}
@@ -26,17 +30,82 @@ fehlerhafte_bilder = []
 total_files = 0
 analysierte_dateien = 0  # Neue Variable für die Anzahl analysierter Dateien
 
+def allowed_file(filename):
+    """Überprüft, ob die Datei einen erlaubten Typ hat."""
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
 @app.route("/")
-def index():
-    """Startseite mit Ordnerstatistiken."""
-    return render_template("index.html", analyse_abgeschlossen=analyse_abgeschlossen, fehlerhafte_bilder=fehlerhafte_bilder)
+def home():
+    """Home-Seite mit Ordnerstatistiken."""
+    if not os.listdir(MEDIA_FOLDER):
+        flash("Bitte laden Sie zuerst Dateien hoch!", "info")
+    return render_template(
+        "index.html",
+        analyse_abgeschlossen=analyse_abgeschlossen,
+        fehlerhafte_bilder=fehlerhafte_bilder,
+        analyse_fortschritt=analyse_fortschritt,
+        total_files=total_files,
+    )
+
+@app.route("/upload", methods=["GET", "POST"])
+def upload_files():
+    """Seite zum Hochladen von Dateien."""
+    global analyse_abgeschlossen, analyse_fortschritt
+
+    if analyse_fortschritt > 0 and not analyse_abgeschlossen:
+        flash("Die Analyse läuft. Sie können keine Dateien mehr hochladen.", "info")
+        return redirect(url_for("home"))
+
+    if request.method == "POST":
+        if 'files[]' not in request.files:
+            flash("Keine Dateien ausgewählt!", "danger")
+            return redirect(request.url)
+
+        files = request.files.getlist('files[]')
+        for file in files:
+            if file and allowed_file(file.filename):
+                filename = secure_filename(file.filename)
+                file.save(os.path.join(MEDIA_FOLDER, filename))
+
+        flash("Dateien erfolgreich hochgeladen!", "success")
+        return redirect(request.url)
+
+    existing_files = os.listdir(MEDIA_FOLDER)
+    return render_template(
+        "upload.html",
+        existing_files=existing_files,
+        analyse_fortschritt=analyse_fortschritt,
+        analyse_abgeschlossen=analyse_abgeschlossen,
+    )
+
+@app.route("/start_analysis", methods=["POST"])
+def start_analysis():
+    """Startet die Analyse manuell."""
+    global analyse_abgeschlossen, analyse_fortschritt, analysierte_dateien, total_files
+
+    if analyse_fortschritt > 0 and not analyse_abgeschlossen:
+        flash("Die Analyse läuft bereits.", "info")
+        return redirect(url_for("home"))  # Geändert von "index" zu "home"
+
+    # Zurücksetzen der Analyse-Variablen
+    analyse_abgeschlossen = False
+    analyse_fortschritt = 0
+    analysierte_dateien = 0
+    total_files = 0
+
+    # Starte die Analyse in einem separaten Thread
+    analyse_thread = threading.Thread(target=analysiere_bilder, daemon=True)
+    analyse_thread.start()
+
+    flash("Analyse wurde gestartet!", "info")
+    return redirect(url_for("home"))  # Geändert von "index" zu "home"
 
 @app.route("/progress")
 def progress():
     """Gibt den Fortschritt der Analyse zurück."""
     return jsonify({
         "progress": analyse_fortschritt,
-        "analysiert": analysierte_dateien,  # Verwende die neue Variable
+        "analysiert": analysierte_dateien,
         "gesamt": total_files
     })
 
@@ -45,7 +114,7 @@ def sort_view():
     """Zeigt das nächste Bild oder Video an."""
     if not analyse_abgeschlossen:
         flash("Die Analyse ist noch nicht abgeschlossen. Bitte warten Sie.")
-        return redirect(url_for("index"))
+        return redirect(url_for("home"))  # Geändert von "index" zu "home"
     if not media_files:
         return render_template("done.html")
     current_file = media_files[0]
@@ -79,7 +148,7 @@ def sort_similar():
 
 @app.route('/media/<path:filename>')
 def media_file(filename):
-    """Stellt Dateien aus dem static/media-Ordner bereit."""
+    """Stellt Dateien aus dem media-Ordner bereit."""
     return send_from_directory(MEDIA_FOLDER, filename)
 
 def get_folder_size(folder):
@@ -106,15 +175,15 @@ def analysiere_bilder():
     global analyse_ergebnisse, media_files, analyse_abgeschlossen, analyse_fortschritt, fehlerhafte_bilder, total_files, analysierte_dateien
     media_files = [f for f in os.listdir(MEDIA_FOLDER) if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
     hashes = {}
-    total_files = len(media_files)  # Speichere die Gesamtanzahl der Dateien
+    total_files = len(media_files)
     fehlerhafte_bilder.clear()
-    analysierte_dateien = 0  # Setze die Anzahl analysierter Dateien auf 0
+    analysierte_dateien = 0
     for index, file in enumerate(media_files):
         file_path = os.path.join(MEDIA_FOLDER, file)
         try:
             img = Image.open(file_path)
-            img.verify()  # Überprüft, ob das Bild gültig ist
-            img = Image.open(file_path)  # Erneut öffnen, um es zu verarbeiten
+            img.verify()
+            img = Image.open(file_path)
             img_hash = imagehash.average_hash(img)
             if img_hash in hashes:
                 hashes[img_hash].append(file)
@@ -123,20 +192,14 @@ def analysiere_bilder():
         except Exception as e:
             print(f"Fehler beim Analysieren von {file}: {e}")
             fehlerhafte_bilder.append(file)
-        analysierte_dateien += 1  # Erhöhe die Anzahl analysierter Dateien
+        analysierte_dateien += 1
         analyse_fortschritt = int(((index + 1) / total_files) * 100)
-        time.sleep(0.1)  # Simuliert eine Verzögerung für die Anzeige
+        time.sleep(0.1)
     analyse_ergebnisse = {k: v for k, v in hashes.items() if len(v) > 1}
     analyse_abgeschlossen = True
 
 if __name__ == "__main__":
-    # Ordner erstellen, falls nicht vorhanden
     for folder in [MEDIA_FOLDER, BEHALTEN_FOLDER, LOESCHEN_FOLDER]:
         os.makedirs(folder, exist_ok=True)
 
-    # Analyse in einem separaten Thread starten
-    analyse_thread = threading.Thread(target=analysiere_bilder, daemon=True)
-    analyse_thread.start()
-
-    # Flask-App starten
     app.run(debug=True)
