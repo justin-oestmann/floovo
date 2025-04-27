@@ -81,13 +81,12 @@
     </script>
 </head>
 
-<body>
+<body data-bs-theme="dark">
     <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container-fluid">
             <a class="navbar-brand" href="#">
                 <img src="{{ url_for('static', filename='logo.png') }}" alt="Floovo Logo" height="30">
-                Floovo
             </a>
             <div class="collapse navbar-collapse">
                 <ul class="navbar-nav ms-auto">
@@ -158,33 +157,45 @@
             <div class="col-md-12 text-center">
                 <h3>Status</h3>
                 <div id="analyse-status">
-                    {% if analyse_fortschritt > 0 and not analyse_abgeschlossen %}
+                    {% if not stats.media.count %}
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-circle"></i> <strong>Keine Dateien im Media-Ordner
+                            gefunden.</strong> Laden
+                        Sie Dateien hoch, um die Analyse zu starten.
+                    </div>
+                    {% elif analyse_fortschritt > 0 and not analyse_abgeschlossen %}
                     <div class="alert alert-info">
                         <i class="bi bi-hourglass-split"></i> <strong>Analyse läuft...</strong> Ähnliche Bilder werden
-                        gesucht. Bitte warten Sie.
+                        gesucht.
+                        Bitte warten Sie.
                         <div id="analyse-details" class="mt-2">
                             <i class="bi bi-bar-chart"></i> {{ analysierte_dateien }} von {{ total_files }} Medien
-                            wurden analysiert.
+                            wurden
+                            analysiert.
                         </div>
                     </div>
                     <div class="progress mt-3">
                         <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar"
-                            style="width: {{ analyse_fortschritt }}%;" id="progress-bar"></div>
+                            style="width: {{ analyse_fortschritt }}%;" id="progress-bar">
+                            {{ analyse_fortschritt }}%
+                        </div>
                     </div>
                     {% elif analyse_abgeschlossen %}
                     <div class="alert alert-success">
                         <i class="bi bi-check-circle"></i> <strong>Analyse abgeschlossen!</strong> Sie können jetzt mit
-                        dem Sortieren beginnen.
+                        dem
+                        Sortieren beginnen.
                     </div>
                     {% else %}
                     <div class="alert alert-secondary">
                         <i class="bi bi-info-circle"></i> <strong>Analyse noch nicht gestartet.</strong> Laden Sie
-                        Medien hoch und starten Sie die Analyse.
+                        Medien hoch
+                        und starten Sie die Analyse.
                     </div>
                     {% endif %}
                 </div>
                 <a href="{{ url_for('sort_view') }}" id="sortieren-button" class="btn btn-success btn-lg w-100 mt-3" {%
-                    if not analyse_abgeschlossen %}disabled{% endif %}>
+                    if not analyse_abgeschlossen or not stats.media.count %}disabled{% endif %}>
                     <i class="bi bi-play-circle"></i> Sortieren starten
                 </a>
             </div>
