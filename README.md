@@ -48,17 +48,6 @@ Floovo uses the following libraries and frameworks:
 
 ---
 
-## 🎨 Customization
-
-You can modify the styles in the `static/style.css` file. For example, the navbar logo margin is defined as:
-```css
-.navbar-brand img {
-    margin-right: 10px;
-}
-```
-
----
-
 ## 🧑‍💻 Usage
 
 1. Open the application in your browser (`http://localhost:5000`).
