@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dateien hochladen</title>
+    <title>Upload Files</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="icon" href="{{ url_for('static', filename='icon.ico') }}">
 </head>
@@ -21,20 +21,20 @@
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
                         <span class="badge bg-primary">
-                            <i class="bi bi-folder"></i> Media: {{ stats.media.count }} Dateien ({{ stats.media.size }}
+                            <i class="bi bi-folder"></i> Media: {{ stats.media.count }} files ({{ stats.media.size }}
                             MB)
                         </span>
                     </li>
                     <li class="nav-item ms-3">
                         <span class="badge bg-success">
-                            <i class="bi bi-check-circle"></i> Behalten: {{ stats.behalten.count }} Dateien ({{
+                            <i class="bi bi-check-circle"></i> Keep: {{ stats.behalten.count }} files ({{
                             stats.behalten.size }} MB)
                         </span>
                     </li>
                     <li class="nav-item ms-3">
                         <span class="badge bg-danger">
-                            <i class="bi bi-trash"></i> Löschen: {{ stats.loeschen.count }} Dateien ({{
-                            stats.loeschen.size }} MB)
+                            <i class="bi bi-trash"></i> Delete: {{ stats.loeschen.count }} files ({{ stats.loeschen.size
+                            }} MB)
                         </span>
                     </li>
                 </ul>
@@ -42,8 +42,8 @@
         </div>
     </nav>
     <div class="container mt-5">
-        <h1 class="text-center">Floovo - Dateien hochladen</h1>
-        <p class="text-center">Laden Sie Ihre Dateien hoch, um mit der Analyse zu beginnen.</p>
+        <h1 class="text-center">Floovo - Upload Files</h1>
+        <p class="text-center">Upload your files to start the analysis.</p>
         {% with messages = get_flashed_messages() %}
         {% if messages %}
         <div class="alert alert-{{ messages[1] }}">
@@ -53,19 +53,19 @@
         {% endwith %}
         <form method="POST" action="{{ url_for('upload_files') }}" enctype="multipart/form-data">
             <div class="mb-3">
-                <label for="files" class="form-label">Wählen Sie Dateien aus:</label>
+                <label for="files" class="form-label">Select files:</label>
                 <input type="file" class="form-control" id="files" name="files[]" multiple>
             </div>
             <button type="submit" class="btn btn-primary w-100" {% if analyse_fortschritt> 0 and not
                 analyse_abgeschlossen %}disabled{% endif %}>
-                <i class="bi bi-upload"></i> Dateien hochladen
+                <i class="bi bi-upload"></i> Upload Files
             </button>
         </form>
         <hr>
-        <h3>Bereits vorhandene Dateien:</h3>
-        <p>Es gibt {{ existing_files|length }} Dateien im Ordner <strong>Media</strong>.</p>
+        <h3>Existing Files:</h3>
+        <p>There are {{ existing_files|length }} files in the <strong>Media</strong> folder.</p>
         <a href="{{ url_for('home') }}" class="btn btn-secondary w-100 mt-3">
-            <i class="bi bi-house"></i> Zur Startseite
+            <i class="bi bi-house"></i> Back to Home
         </a>
     </div>
 </body>

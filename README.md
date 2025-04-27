@@ -59,9 +59,26 @@ Floovo uses the following libraries and frameworks:
 
 ## 📂 File Structure
 
-- `static/style.css`: Custom CSS styles.
-- `app.py`: Backend server logic.
-- `templates/`: HTML templates.
+The project structure is as follows:
+
+```
+floovo/
+├── app.py                # Main application logic
+├── requirements.txt      # Python dependencies
+├── static/
+│   ├── style.css         # Custom CSS styles
+│   └── media/            # Uploaded media files
+├── templates/
+│   ├── base.html         # Base HTML template
+│   ├── index.html        # Homepage template
+│   ├── upload.html       # File upload page
+│   ├── sort.html         # Sorting page for media
+│   ├── setup.html        # Folder setup page
+│   └── done.html         # Completion page
+├── behalten/             # Folder for retained media
+├── loeschen/             # Folder for deleted media
+└── .gitignore            # Git ignore rules
+```
 
 ---
 

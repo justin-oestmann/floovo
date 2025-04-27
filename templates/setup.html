@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ordner auswählen</title>
+    <title>Select Folders</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="icon" href="{{ url_for('static', filename='icon.ico') }}">
 </head>
@@ -19,24 +19,24 @@
         </div>
     </nav>
     <div class="container mt-5">
-        <h1 class="text-center">Floovo - Ordner auswählen</h1>
+        <h1 class="text-center">Floovo - Select Folders</h1>
         <form method="POST" action="{{ url_for('setup') }}">
             <div class="mb-3">
-                <label for="media_folder" class="form-label">Ordner für zu sortierende Medien:</label>
+                <label for="media_folder" class="form-label">Folder for media to sort:</label>
                 <input type="file" class="form-control" id="media_folder" name="media_folder" webkitdirectory directory
                     required>
             </div>
             <div class="mb-3">
-                <label for="behalten_folder" class="form-label">Ordner für behaltene Medien:</label>
+                <label for="behalten_folder" class="form-label">Folder for kept media:</label>
                 <input type="file" class="form-control" id="behalten_folder" name="behalten_folder" webkitdirectory
                     directory required>
             </div>
             <div class="mb-3">
-                <label for="loeschen_folder" class="form-label">Ordner für gelöschte Medien:</label>
+                <label for="loeschen_folder" class="form-label">Folder for deleted media:</label>
                 <input type="file" class="form-control" id="loeschen_folder" name="loeschen_folder" webkitdirectory
                     directory required>
             </div>
-            <button type="submit" class="btn btn-primary w-100">Speichern und fortfahren</button>
+            <button type="submit" class="btn btn-primary w-100">Save and Continue</button>
         </form>
     </div>
 </body>

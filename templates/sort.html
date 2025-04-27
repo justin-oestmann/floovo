@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sortieren</title>
+    <title>Sort</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css">
     <link rel="icon" href="{{ url_for('static', filename='icon.ico') }}">
@@ -162,17 +162,17 @@
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
                         <span class="badge bg-primary">
-                            <i class="bi bi-folder"></i> Media: {{ stats.media.count }} Dateien
+                            <i class="bi bi-folder"></i> Media: {{ stats.media.count }} files
                         </span>
                     </li>
                     <li class="nav-item ms-3">
                         <span class="badge bg-success">
-                            <i class="bi bi-check-circle"></i> Behalten: {{ stats.behalten.count }} Dateien
+                            <i class="bi bi-check-circle"></i> Keep: {{ stats.behalten.count }} files
                         </span>
                     </li>
                     <li class="nav-item ms-3">
                         <span class="badge bg-danger">
-                            <i class="bi bi-trash"></i> Löschen: {{ stats.loeschen.count }} Dateien
+                            <i class="bi bi-trash"></i> Delete: {{ stats.loeschen.count }} files
                         </span>
                     </li>
                 </ul>
@@ -180,11 +180,10 @@
         </div>
     </nav>
     <div class="container mt-4">
-        <h1 class="text-center"><i class="bi bi-sort-alpha-down"></i> Sortieren</h1>
+        <h1 class="text-center"><i class="bi bi-sort-alpha-down"></i> Sort</h1>
         {% if similar_files and similar_files|length > 0 %}
         <div class="alert alert-info text-center">
-            <i class="bi bi-images"></i> <strong>Ähnliche Bilder gefunden!</strong> Wählen Sie die Bilder aus, die Sie
-            behalten möchten.
+            <i class="bi bi-images"></i> <strong>Similar images found!</strong> Select the images you want to keep.
         </div>
         <form method="POST" action="{{ url_for('sort_similar') }}">
             <div class="row">
@@ -204,30 +203,30 @@
                 {% endfor %}
             </div>
             <button type="submit" class="btn btn-primary mt-3 w-100">
-                <i class="bi bi-check-circle"></i> Auswahl abgeben
+                <i class="bi bi-check-circle"></i> Submit Selection
             </button>
         </form>
         {% elif current_file %}
         <div class="alert alert-info text-center">
-            <i class="bi bi-file-earmark"></i> <strong>Einzelnes Bild!</strong> Entscheiden Sie, ob Sie das Bild
-            behalten oder löschen möchten.
+            <i class="bi bi-file-earmark"></i> <strong>Single Image!</strong> Decide whether to keep or delete the
+            image.
         </div>
         <div class="image-container">
-            <img src="{{ url_for('media_file', filename=current_file) }}" alt="Aktuelles Bild/Video">
+            <img src="{{ url_for('media_file', filename=current_file) }}" alt="Current Image/Video">
             <div class="button-container">
                 <form method="POST" action="{{ url_for('sort_file', filename=current_file) }}">
                     <button name="action" value="behalten" class="btn btn-success btn-lg me-2">
-                        <i class="bi bi-check-circle"></i> Behalten
+                        <i class="bi bi-check-circle"></i> Keep
                     </button>
                     <button name="action" value="loeschen" class="btn btn-danger btn-lg">
-                        <i class="bi bi-trash"></i> Löschen
+                        <i class="bi bi-trash"></i> Delete
                     </button>
                 </form>
             </div>
         </div>
         {% else %}
         <div class="alert alert-warning text-center">
-            <i class="bi bi-exclamation-circle"></i> <strong>Keine Bilder zum Sortieren gefunden!</strong>
+            <i class="bi bi-exclamation-circle"></i> <strong>No images to sort found!</strong>
         </div>
         {% endif %}
     </div>
@@ -239,13 +238,13 @@
                     <button id="modalPrev" class="btn btn-secondary position-absolute start-0" style="z-index: 1050;">
                         <i class="bi bi-arrow-left"></i>
                     </button>
-                    <img id="modalImage" src="" alt="Bildansicht">
+                    <img id="modalImage" src="" alt="Image View">
                     <button id="modalNext" class="btn btn-secondary position-absolute end-0" style="z-index: 1050;">
                         <i class="bi bi-arrow-right"></i>
                     </button>
                     <div class="modal-checkbox-container">
                         <input type="checkbox" id="modalCheckbox" class="form-check-input">
-                        <label for="modalCheckbox" class="form-check-label">Behalten</label>
+                        <label for="modalCheckbox" class="form-check-label">Keep</label>
                     </div>
                 </div>
             </div>

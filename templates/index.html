@@ -92,20 +92,20 @@
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
                         <span class="badge bg-primary">
-                            <i class="bi bi-folder"></i> Media: {{ stats.media.count }} Dateien ({{ stats.media.size }}
+                            <i class="bi bi-folder"></i> Media: {{ stats.media.count }} files ({{ stats.media.size }}
                             MB)
                         </span>
                     </li>
                     <li class="nav-item ms-3">
                         <span class="badge bg-success">
-                            <i class="bi bi-check-circle"></i> Behalten: {{ stats.behalten.count }} Dateien ({{
+                            <i class="bi bi-check-circle"></i> Keep: {{ stats.behalten.count }} files ({{
                             stats.behalten.size }} MB)
                         </span>
                     </li>
                     <li class="nav-item ms-3">
                         <span class="badge bg-danger">
-                            <i class="bi bi-trash"></i> Löschen: {{ stats.loeschen.count }} Dateien ({{
-                            stats.loeschen.size }} MB)
+                            <i class="bi bi-trash"></i> Delete: {{ stats.loeschen.count }} files ({{ stats.loeschen.size
+                            }} MB)
                         </span>
                     </li>
                 </ul>
@@ -113,9 +113,8 @@
         </div>
     </nav>
     <div class="container mt-4">
-        <h1 class="text-center"><i class="bi bi-camera"></i> Willkommen bei Floovo</h1>
-        <p class="text-center">Laden Sie Ihre Medien hoch, starten Sie die Analyse und sortieren Sie Ihre Dateien
-            einfach und effizient.</p>
+        <h1 class="text-center"><i class="bi bi-camera"></i> Welcome to Floovo</h1>
+        <p class="text-center">Upload your media, start the analysis, and sort your files easily and efficiently.</p>
         {% with messages = get_flashed_messages() %}
         {% if messages %}
         <div class="alert alert-warning">
@@ -127,12 +126,11 @@
             <div class="col-md-6">
                 <div class="card">
                     <div class="card-body text-center">
-                        <h5 class="card-title"><i class="bi bi-upload"></i> Medien hochladen</h5>
-                        <p class="card-text">Laden Sie Ihre Medien in den Media-Ordner hoch, um mit der Analyse zu
-                            beginnen.</p>
+                        <h5 class="card-title"><i class="bi bi-upload"></i> Upload Media</h5>
+                        <p class="card-text">Upload your media to the Media folder to start the analysis.</p>
                         <a href="{{ url_for('upload_files') }}" id="upload-button" class="btn btn-primary w-100" {% if
                             analyse_fortschritt> 0 and not analyse_abgeschlossen %}disabled{% endif %}>
-                            <i class="bi bi-upload"></i> Hochladen
+                            <i class="bi bi-upload"></i> Upload
                         </a>
                     </div>
                 </div>
@@ -140,12 +138,12 @@
             <div class="col-md-6">
                 <div class="card">
                     <div class="card-body text-center">
-                        <h5 class="card-title"><i class="bi bi-gear"></i> Analyse starten</h5>
-                        <p class="card-text">Starten Sie die Analyse, um ähnliche Dateien zu finden.</p>
+                        <h5 class="card-title"><i class="bi bi-gear"></i> Start Analysis</h5>
+                        <p class="card-text">Start the analysis to find similar files.</p>
                         <form method="POST" action="{{ url_for('start_analysis') }}" onsubmit="startAnalysis(event)">
                             <button type="submit" id="analyse-button" class="btn btn-secondary w-100" {% if
                                 analyse_fortschritt> 0 and not analyse_abgeschlossen %}disabled{% endif %}>
-                                <i class="bi bi-gear"></i> Analyse starten
+                                <i class="bi bi-gear"></i> Start Analysis
                             </button>
                         </form>
                     </div>
@@ -159,19 +157,16 @@
                 <div id="analyse-status">
                     {% if not stats.media.count %}
                     <div class="alert alert-warning">
-                        <i class="bi bi-exclamation-circle"></i> <strong>Keine Dateien im Media-Ordner
-                            gefunden.</strong> Laden
-                        Sie Dateien hoch, um die Analyse zu starten.
+                        <i class="bi bi-exclamation-circle"></i> <strong>No files found in the Media folder.</strong>
+                        Upload files to start the analysis.
                     </div>
                     {% elif analyse_fortschritt > 0 and not analyse_abgeschlossen %}
                     <div class="alert alert-info">
-                        <i class="bi bi-hourglass-split"></i> <strong>Analyse läuft...</strong> Ähnliche Bilder werden
-                        gesucht.
-                        Bitte warten Sie.
+                        <i class="bi bi-hourglass-split"></i> <strong>Analysis in progress...</strong> Searching for
+                        similar images. Please wait.
                         <div id="analyse-details" class="mt-2">
-                            <i class="bi bi-bar-chart"></i> {{ analysierte_dateien }} von {{ total_files }} Medien
-                            wurden
-                            analysiert.
+                            <i class="bi bi-bar-chart"></i> {{ analysierte_dateien }} of {{ total_files }} media files
+                            analyzed.
                         </div>
                     </div>
                     <div class="progress mt-3">
@@ -182,21 +177,19 @@
                     </div>
                     {% elif analyse_abgeschlossen %}
                     <div class="alert alert-success">
-                        <i class="bi bi-check-circle"></i> <strong>Analyse abgeschlossen!</strong> Sie können jetzt mit
-                        dem
-                        Sortieren beginnen.
+                        <i class="bi bi-check-circle"></i> <strong>Analysis complete!</strong> You can now start
+                        sorting.
                     </div>
                     {% else %}
                     <div class="alert alert-secondary">
-                        <i class="bi bi-info-circle"></i> <strong>Analyse noch nicht gestartet.</strong> Laden Sie
-                        Medien hoch
-                        und starten Sie die Analyse.
+                        <i class="bi bi-info-circle"></i> <strong>Analysis not started yet.</strong> Upload media and
+                        start the analysis.
                     </div>
                     {% endif %}
                 </div>
                 <a href="{{ url_for('sort_view') }}" id="sortieren-button" class="btn btn-success btn-lg w-100 mt-3" {%
                     if not analyse_abgeschlossen or not stats.media.count %}disabled{% endif %}>
-                    <i class="bi bi-play-circle"></i> Sortieren starten
+                    <i class="bi bi-play-circle"></i> Start Sorting
                 </a>
             </div>
         </div>
