@@ -9,7 +9,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
     <link rel="icon" href="{{ url_for('static', filename='icon.ico') }}">
     <script>
-        let progressInterval; // Variable für das Intervall
+        let progressInterval; // Variable for the interval
 
         function updateProgress() {
             fetch("{{ url_for('progress') }}")
@@ -19,63 +19,63 @@
                     const analyseDetails = document.getElementById("analyse-details");
                     const analyseStatus = document.getElementById("analyse-status");
                     const sortierenButton = document.getElementById("sortieren-button");
-                    const allButtons = document.querySelectorAll("button, a.btn"); // Alle Buttons und Links
+                    const allButtons = document.querySelectorAll("button, a.btn"); // All buttons and links
 
                     if (analyseStatus) {
                         if (data.progress > 0 && data.progress < 100) {
                             analyseStatus.innerHTML = `
                                 <div class="alert alert-info">
-                                    <i class="bi bi-hourglass-split"></i> <strong>Analyse läuft...</strong> Ähnliche Bilder werden gesucht. Bitte warten Sie.
+                                    <i class="bi bi-hourglass-split"></i> <strong>Analysis in progress...</strong> Searching for similar images. Please wait.
                                     <div id="analyse-details" class="mt-2">
-                                        <i class="bi bi-bar-chart"></i> ${data.analysiert} von ${data.gesamt} Medien wurden analysiert.
+                                        <i class="bi bi-bar-chart"></i> ${data.analyzed} of ${data.total} media files analyzed.
                                     </div>
                                 </div>`;
                             if (progressBar) {
                                 progressBar.style.width = data.progress + "%";
                                 progressBar.textContent = data.progress + "%";
                             }
-                            allButtons.forEach(button => button.disabled = true); // Deaktiviere alle Buttons
+                            allButtons.forEach(button => button.disabled = true); // Disable all buttons
                         } else if (data.progress === 100) {
                             analyseStatus.innerHTML = `
                                 <div class="alert alert-success">
-                                    <i class="bi bi-check-circle"></i> <strong>Analyse abgeschlossen!</strong> Sie können jetzt mit dem Sortieren beginnen.
+                                    <i class="bi bi-check-circle"></i> <strong>Analysis complete!</strong> You can now start sorting.
                                 </div>`;
                             if (sortierenButton) {
                                 sortierenButton.disabled = false;
                             }
-                            allButtons.forEach(button => button.disabled = false); // Aktiviere alle Buttons
-                            clearInterval(progressInterval); // Stoppe die zyklische Abfrage
+                            allButtons.forEach(button => button.disabled = false); // Enable all buttons
+                            clearInterval(progressInterval); // Stop the periodic check
                         }
                     }
                 })
-                .catch(error => console.error("Fehler beim Abrufen des Fortschritts:", error));
+                .catch(error => console.error("Error fetching progress:", error));
         }
 
         function startAnalysis(event) {
-            event.preventDefault(); // Verhindert das Neuladen der Seite
+            event.preventDefault(); // Prevent page reload
             fetch("{{ url_for('start_analysis') }}", { method: "POST" })
                 .then(() => {
                     const analyseStatus = document.getElementById("analyse-status");
-                    const allButtons = document.querySelectorAll("button, a.btn"); // Alle Buttons und Links
+                    const allButtons = document.querySelectorAll("button, a.btn"); // All buttons and links
                     if (analyseStatus) {
                         analyseStatus.innerHTML = `
                             <div class="alert alert-info">
-                                <i class="bi bi-hourglass-split"></i> <strong>Analyse läuft...</strong> Ähnliche Bilder werden gesucht. Bitte warten Sie.
+                                <i class="bi bi-hourglass-split"></i> <strong>Analysis in progress...</strong> Searching for similar images. Please wait.
                             </div>`;
                     }
                     const progressBar = document.getElementById("progress-bar");
                     if (progressBar) {
                         progressBar.style.width = "0%";
                     }
-                    allButtons.forEach(button => button.disabled = true); // Deaktiviere alle Buttons
-                    progressInterval = setInterval(updateProgress, 500); // Starte die zyklische Abfrage
+                    allButtons.forEach(button => button.disabled = true); // Disable all buttons
+                    progressInterval = setInterval(updateProgress, 500); // Start periodic check
                 })
-                .catch(error => console.error("Fehler beim Starten der Analyse:", error));
+                .catch(error => console.error("Error starting analysis:", error));
         }
 
         document.addEventListener("DOMContentLoaded", () => {
             {% if analyse_fortschritt > 0 and not analyse_abgeschlossen %}
-            progressInterval = setInterval(updateProgress, 500); // Starte die zyklische Abfrage beim Laden der Seite
+            progressInterval = setInterval(updateProgress, 500); // Start periodic check on page load
             {% endif %}
         });
     </script>

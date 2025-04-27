@@ -107,11 +107,11 @@ def start_analysis():
 
 @app.route("/progress")
 def progress():
-    """Gibt den Fortschritt der Analyse zurück."""
+    """Returns the progress of the analysis."""
     return jsonify({
         "progress": analyse_fortschritt,
-        "analysiert": analysierte_dateien,  # Anzahl der analysierten Dateien
-        "gesamt": total_files  # Gesamtanzahl der Dateien
+        "analyzed": analysierte_dateien,  # Correct key for analyzed files
+        "total": total_files  # Correct key for total files
     })
 
 @app.route("/sort")
@@ -198,20 +198,20 @@ def inject_stats():
     }
     return {"stats": stats}
 
-# Konfiguriere das Logging
+# Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 def analysiere_bilder():
-    """Funktion zur Analyse von Bildern."""
+    """Function to analyze images."""
     global analyse_ergebnisse, media_files, analyse_abgeschlossen, analyse_fortschritt, fehlerhafte_bilder, total_files, analysierte_dateien
     media_files = [f for f in os.listdir(MEDIA_FOLDER) if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
     hashes = {}
-    total_files = len(media_files)  # Setze die Gesamtanzahl der Dateien
+    total_files = len(media_files)  # Set the total number of files
     fehlerhafte_bilder.clear()
-    analysierte_dateien = 0  # Setze die Anzahl der analysierten Dateien zurück
-    similarity_threshold = 17  # Weniger strenger Schwellenwert für ähnliche Bilder
+    analysierte_dateien = 0  # Reset the number of analyzed files
+    similarity_threshold = 17  # Less strict threshold for similar images
 
-    logging.info(f"Starte Analyse für {total_files} Dateien.")
+    logging.info(f"Starting analysis for {total_files} files.")
 
     for index, file in enumerate(media_files):
         file_path = os.path.join(MEDIA_FOLDER, file)
@@ -220,7 +220,7 @@ def analysiere_bilder():
             img.verify()
             img = Image.open(file_path)
 
-            # Kombiniere mehrere Hash-Algorithmen
+            # Combine multiple hash algorithms
             img_hashes = {
                 "phash": imagehash.phash(img),
                 "dhash": imagehash.dhash(img),
@@ -229,11 +229,11 @@ def analysiere_bilder():
             found_similar = False
 
             for existing_hashes in hashes.values():
-                # Vergleiche alle Hashes mit einem kombinierten Schwellenwert
+                # Compare all hashes with a combined threshold
                 if all(abs(img_hashes[hash_type] - existing_hashes[hash_type]) <= similarity_threshold
                        for hash_type in img_hashes):
                     existing_hashes["files"].append(file)
-                    logging.info(f"Bild '{file}' wurde mit Gruppe '{existing_hashes['files'][0]}' gruppiert.")
+                    logging.info(f"Image '{file}' grouped with '{existing_hashes['files'][0]}'.")
                     found_similar = True
                     break
 
@@ -244,18 +244,18 @@ def analysiere_bilder():
                     "average_hash": img_hashes["average_hash"],
                     "files": [file]
                 }
-                logging.info(f"Bild '{file}' wurde als neue Gruppe hinzugefügt.")
+                logging.info(f"Image '{file}' added as a new group.")
         except Exception as e:
-            logging.error(f"Fehler beim Analysieren von '{file}': {e}")
+            logging.error(f"Error analyzing '{file}': {e}")
             fehlerhafte_bilder.append(file)
 
-        analysierte_dateien += 1  # Erhöhe die Anzahl der analysierten Dateien
-        analyse_fortschritt = int(((index + 1) / total_files) * 100)  # Berechne den Fortschritt
-        time.sleep(0.1)  # Simuliere eine Verzögerung
+        analysierte_dateien += 1  # Increment the number of analyzed files
+        analyse_fortschritt = int(((index + 1) / total_files) * 100)  # Calculate progress
+        time.sleep(0.1)  # Simulate a delay
 
-    # Extrahiere die Gruppen mit mehr als einem Bild
+    # Extract groups with more than one image
     analyse_ergebnisse = {k: v["files"] for k, v in hashes.items() if len(v["files"]) > 1}
-    logging.info(f"Analyse abgeschlossen. {len(analyse_ergebnisse)} Gruppen mit ähnlichen Bildern gefunden.")
+    logging.info(f"Analysis complete. Found {len(analyse_ergebnisse)} groups with similar images.")
     analyse_abgeschlossen = True
 
 @app.route("/dev/groups", methods=["GET"])
