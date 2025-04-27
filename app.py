@@ -38,7 +38,7 @@ def allowed_file(filename):
 def home():
     """Home-Seite mit Ordnerstatistiken."""
     if not os.listdir(MEDIA_FOLDER):
-        flash("Bitte laden Sie zuerst Dateien hoch!", "info")
+        flash("Bitte laden Sie zuerst Dateien in Floovo hoch!", "info")
     return render_template(
         "index.html",
         analyse_abgeschlossen=analyse_abgeschlossen,
@@ -67,7 +67,7 @@ def upload_files():
                 filename = secure_filename(file.filename)
                 file.save(os.path.join(MEDIA_FOLDER, filename))
 
-        flash("Dateien erfolgreich hochgeladen!", "success")
+        flash("Dateien erfolgreich in Floovo hochgeladen!", "success")
         return redirect(request.url)
 
     existing_files = os.listdir(MEDIA_FOLDER)
@@ -105,8 +105,8 @@ def progress():
     """Gibt den Fortschritt der Analyse zurück."""
     return jsonify({
         "progress": analyse_fortschritt,
-        "analysiert": analysierte_dateien,
-        "gesamt": total_files
+        "analysiert": analysierte_dateien,  # Anzahl der analysierten Dateien
+        "gesamt": total_files  # Gesamtanzahl der Dateien
     })
 
 @app.route("/sort")
@@ -175,9 +175,9 @@ def analysiere_bilder():
     global analyse_ergebnisse, media_files, analyse_abgeschlossen, analyse_fortschritt, fehlerhafte_bilder, total_files, analysierte_dateien
     media_files = [f for f in os.listdir(MEDIA_FOLDER) if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
     hashes = {}
-    total_files = len(media_files)
+    total_files = len(media_files)  # Setze die Gesamtanzahl der Dateien
     fehlerhafte_bilder.clear()
-    analysierte_dateien = 0
+    analysierte_dateien = 0  # Setze die Anzahl der analysierten Dateien zurück
     for index, file in enumerate(media_files):
         file_path = os.path.join(MEDIA_FOLDER, file)
         try:
@@ -192,9 +192,9 @@ def analysiere_bilder():
         except Exception as e:
             print(f"Fehler beim Analysieren von {file}: {e}")
             fehlerhafte_bilder.append(file)
-        analysierte_dateien += 1
-        analyse_fortschritt = int(((index + 1) / total_files) * 100)
-        time.sleep(0.1)
+        analysierte_dateien += 1  # Erhöhe die Anzahl der analysierten Dateien
+        analyse_fortschritt = int(((index + 1) / total_files) * 100)  # Berechne den Fortschritt
+        time.sleep(0.1)  # Simuliere eine Verzögerung
     analyse_ergebnisse = {k: v for k, v in hashes.items() if len(v) > 1}
     analyse_abgeschlossen = True
 

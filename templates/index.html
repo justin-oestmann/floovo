@@ -4,9 +4,81 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MediaTinder</title>
+    <title>Floovo</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="icon" href="{{ url_for('static', filename='icon.ico') }}">
+    <script>
+        let progressInterval; // Variable für das Intervall
+
+        function updateProgress() {
+            fetch("{{ url_for('progress') }}")
+                .then(response => response.json())
+                .then(data => {
+                    const progressBar = document.getElementById("progress-bar");
+                    const analyseDetails = document.getElementById("analyse-details");
+                    const analyseStatus = document.getElementById("analyse-status");
+                    const sortierenButton = document.getElementById("sortieren-button");
+                    const allButtons = document.querySelectorAll("button, a.btn"); // Alle Buttons und Links
+
+                    if (analyseStatus) {
+                        if (data.progress > 0 && data.progress < 100) {
+                            analyseStatus.innerHTML = `
+                                <div class="alert alert-info">
+                                    <i class="bi bi-hourglass-split"></i> <strong>Analyse läuft...</strong> Ähnliche Bilder werden gesucht. Bitte warten Sie.
+                                    <div id="analyse-details" class="mt-2">
+                                        <i class="bi bi-bar-chart"></i> ${data.analysiert} von ${data.gesamt} Medien wurden analysiert.
+                                    </div>
+                                </div>`;
+                            if (progressBar) {
+                                progressBar.style.width = data.progress + "%";
+                                progressBar.textContent = data.progress + "%";
+                            }
+                            allButtons.forEach(button => button.disabled = true); // Deaktiviere alle Buttons
+                        } else if (data.progress === 100) {
+                            analyseStatus.innerHTML = `
+                                <div class="alert alert-success">
+                                    <i class="bi bi-check-circle"></i> <strong>Analyse abgeschlossen!</strong> Sie können jetzt mit dem Sortieren beginnen.
+                                </div>`;
+                            if (sortierenButton) {
+                                sortierenButton.disabled = false;
+                            }
+                            allButtons.forEach(button => button.disabled = false); // Aktiviere alle Buttons
+                            clearInterval(progressInterval); // Stoppe die zyklische Abfrage
+                        }
+                    }
+                })
+                .catch(error => console.error("Fehler beim Abrufen des Fortschritts:", error));
+        }
+
+        function startAnalysis(event) {
+            event.preventDefault(); // Verhindert das Neuladen der Seite
+            fetch("{{ url_for('start_analysis') }}", { method: "POST" })
+                .then(() => {
+                    const analyseStatus = document.getElementById("analyse-status");
+                    const allButtons = document.querySelectorAll("button, a.btn"); // Alle Buttons und Links
+                    if (analyseStatus) {
+                        analyseStatus.innerHTML = `
+                            <div class="alert alert-info">
+                                <i class="bi bi-hourglass-split"></i> <strong>Analyse läuft...</strong> Ähnliche Bilder werden gesucht. Bitte warten Sie.
+                            </div>`;
+                    }
+                    const progressBar = document.getElementById("progress-bar");
+                    if (progressBar) {
+                        progressBar.style.width = "0%";
+                    }
+                    allButtons.forEach(button => button.disabled = true); // Deaktiviere alle Buttons
+                    progressInterval = setInterval(updateProgress, 500); // Starte die zyklische Abfrage
+                })
+                .catch(error => console.error("Fehler beim Starten der Analyse:", error));
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            {% if analyse_fortschritt > 0 and not analyse_abgeschlossen %}
+            progressInterval = setInterval(updateProgress, 500); // Starte die zyklische Abfrage beim Laden der Seite
+            {% endif %}
+        });
+    </script>
 </head>
 
 <body>
@@ -14,7 +86,8 @@
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
         <div class="container-fluid">
             <a class="navbar-brand" href="#">
-                <i class="bi bi-images"></i> MediaTinder
+                <img src="{{ url_for('static', filename='logo.png') }}" alt="Floovo Logo" height="30">
+                Floovo
             </a>
             <div class="collapse navbar-collapse">
                 <ul class="navbar-nav ms-auto">
@@ -40,9 +113,8 @@
             </div>
         </div>
     </nav>
-
     <div class="container mt-4">
-        <h1 class="text-center"><i class="bi bi-camera"></i> Willkommen bei MediaTinder</h1>
+        <h1 class="text-center"><i class="bi bi-camera"></i> Willkommen bei Floovo</h1>
         <p class="text-center">Laden Sie Ihre Medien hoch, starten Sie die Analyse und sortieren Sie Ihre Dateien
             einfach und effizient.</p>
         {% with messages = get_flashed_messages() %}
@@ -71,7 +143,7 @@
                     <div class="card-body text-center">
                         <h5 class="card-title"><i class="bi bi-gear"></i> Analyse starten</h5>
                         <p class="card-text">Starten Sie die Analyse, um ähnliche Dateien zu finden.</p>
-                        <form method="POST" action="{{ url_for('start_analysis') }}">
+                        <form method="POST" action="{{ url_for('start_analysis') }}" onsubmit="startAnalysis(event)">
                             <button type="submit" id="analyse-button" class="btn btn-secondary w-100" {% if
                                 analyse_fortschritt> 0 and not analyse_abgeschlossen %}disabled{% endif %}>
                                 <i class="bi bi-gear"></i> Analyse starten
@@ -118,45 +190,6 @@
             </div>
         </div>
     </div>
-    <script>
-        function updateProgress() {
-            fetch("{{ url_for('progress') }}")
-                .then(response => response.json())
-                .then(data => {
-                    const progressBar = document.getElementById("progress-bar");
-                    const analyseDetails = document.getElementById("analyse-details");
-                    const sortierenButton = document.getElementById("sortieren-button");
-                    const analyseButton = document.getElementById("analyse-button");
-                    const uploadButton = document.getElementById("upload-button");
-                    const analyseStatus = document.getElementById("analyse-status");
-
-                    progressBar.style.width = data.progress + "%";
-                    progressBar.textContent = data.progress + "%";
-                    analyseDetails.innerHTML = `<i class="bi bi-bar-chart"></i> ${data.analysiert} von ${data.gesamt} Medien wurden analysiert.`;
-
-                    if (data.progress < 100) {
-                        analyseButton.disabled = true;
-                        sortierenButton.disabled = true;
-                        uploadButton.disabled = true;
-                        setTimeout(updateProgress, 500); // Wiederhole die Anfrage alle 500ms
-                    } else {
-                        // Analyse abgeschlossen
-                        analyseStatus.innerHTML = `
-                        <div class="alert alert-success text-center">
-                            <i class="bi bi-check-circle"></i> <strong>Analyse abgeschlossen!</strong> Sie können jetzt mit dem Sortieren beginnen.
-                        </div>`;
-                        sortierenButton.disabled = false;
-                        analyseButton.disabled = false;
-                        uploadButton.disabled = false;
-                    }
-                })
-                .catch(error => console.error("Fehler beim Abrufen des Fortschritts:", error));
-        }
-
-        {% if analyse_fortschritt > 0 and not analyse_abgeschlossen %}
-        updateProgress();
-        {% endif %}
-    </script>
 </body>
 
 </html>
