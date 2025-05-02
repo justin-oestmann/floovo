@@ -19,8 +19,8 @@ MEDIA_FOLDER = "static/media"
 BEHALTEN_FOLDER = "behalten"
 LOESCHEN_FOLDER = "loeschen"
 
-# Erlaubte Dateitypen für den Upload
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
+# Erlaubte Dateitypen für den Upload (include mp4 for videos)
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'mp4'}
 
 # Globale Variablen
 analyse_ergebnisse = {}
@@ -81,68 +81,77 @@ def upload_files():
 
 @app.route("/start_analysis", methods=["POST"])
 def start_analysis():
-    """Startet die Analyse manuell."""
+    """Manually starts the analysis."""
     global analyse_abgeschlossen, analyse_fortschritt, analysierte_dateien, total_files
 
-    if not os.listdir(MEDIA_FOLDER):
-        flash("Der Media-Ordner ist leer. Bitte laden Sie zuerst Dateien hoch.", "danger")
-        return redirect(url_for("home"))
-
-    if analyse_fortschritt > 0 and not analyse_abgeschlossen:
-        flash("Die Analyse läuft bereits.", "info")
-        return redirect(url_for("home"))
-
-    # Zurücksetzen der Analyse-Variablen
+    # Reset analysis variables
     analyse_abgeschlossen = False
     analyse_fortschritt = 0
     analysierte_dateien = 0
     total_files = 0
 
-    # Starte die Analyse in einem separaten Thread
+    # Start analysis in a separate thread
     analyse_thread = threading.Thread(target=analysiere_bilder, daemon=True)
     analyse_thread.start()
 
-    flash("Analyse wurde gestartet!", "info")
+    flash("Analysis started!", "info")
     return redirect(url_for("home"))
 
 @app.route("/progress")
 def progress():
     """Returns the progress of the analysis."""
+    # Ensure progress reflects completion when analysis is done
+    if analyse_abgeschlossen:
+        return jsonify({
+            "progress": 100,
+            "analyzed": total_files,
+            "total": total_files
+        })
     return jsonify({
         "progress": analyse_fortschritt,
-        "analyzed": analysierte_dateien,  # Correct key for analyzed files
-        "total": total_files  # Correct key for total files
+        "analyzed": analysierte_dateien,
+        "total": total_files
     })
 
 @app.route("/sort")
 def sort_view():
-    """Zeigt das nächste Bild oder die Gruppe ähnlicher Bilder an."""
+    """Displays the next image, video, or group of similar images."""
     if not analyse_abgeschlossen:
-        flash("Die Analyse ist noch nicht abgeschlossen. Bitte warten Sie.")
+        flash("The analysis is not yet complete. Please wait.")
         return redirect(url_for("home"))
+    
+    # Ensure media_files includes both images and videos
     if not media_files:
         return render_template("done.html")
     
     current_file = media_files[0]
     
-    # Suche die Gruppe, zu der das aktuelle Bild gehört
+    # Check if the current file is a video
+    if current_file.lower().endswith('.mp4'):
+        return render_template("sort.html", current_file=current_file, similar_files=[])
+
+    # Search for the group to which the current image belongs
     for group_files in analyse_ergebnisse.values():
         if current_file in group_files:
             return render_template("sort.html", current_file=None, similar_files=group_files)
     
-    # Wenn keine Gruppe gefunden wurde, zeige das einzelne Bild an
+    # If no group is found, display the single image
     return render_template("sort.html", current_file=current_file, similar_files=[])
 
 @app.route("/sort/<filename>", methods=["POST"])
 def sort_file(filename):
-    """Sortiert eine Datei in den Behalten- oder Löschen-Ordner."""
+    """Sorts a file into the Keep or Delete folder."""
     action = request.form.get("action")
     src_path = os.path.join(MEDIA_FOLDER, filename)
     if action == "behalten":
         shutil.move(src_path, os.path.join(BEHALTEN_FOLDER, filename))
     elif action == "loeschen":
         shutil.move(src_path, os.path.join(LOESCHEN_FOLDER, filename))
-    media_files.remove(filename)
+    
+    # Remove the file from media_files after sorting
+    if filename in media_files:
+        media_files.remove(filename)
+    
     return redirect(url_for("sort_view"))
 
 @app.route("/sort/similar", methods=["POST"])
@@ -204,47 +213,60 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 def analysiere_bilder():
     """Function to analyze images."""
     global analyse_ergebnisse, media_files, analyse_abgeschlossen, analyse_fortschritt, fehlerhafte_bilder, total_files, analysierte_dateien
-    media_files = [f for f in os.listdir(MEDIA_FOLDER) if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
+    # Include both images and videos in media_files
+    media_files = [f for f in os.listdir(MEDIA_FOLDER) if f.lower().endswith(('.png', '.jpg', '.jpeg', '.mp4'))]
+    media_files = [f for f in media_files if os.path.isfile(os.path.join(MEDIA_FOLDER, f))]  # Ensure only files are included
+    if not media_files:
+        logging.info("No media files found in the media folder.")
+        analyse_abgeschlossen = True
+        analyse_fortschritt = 100
+        return
+
     hashes = {}
     total_files = len(media_files)  # Set the total number of files
     fehlerhafte_bilder.clear()
     analysierte_dateien = 0  # Reset the number of analyzed files
-    similarity_threshold = 17  # Less strict threshold for similar images
+    similarity_threshold = 18.5  # Less strict threshold for similar images
 
     logging.info(f"Starting analysis for {total_files} files.")
 
     for index, file in enumerate(media_files):
+        if file.lower().endswith('.mp4'):
+            # Skip analysis for videos but keep them in media_files
+            logging.info(f"Skipping analysis for video file '{file}'.")
+            continue
+
         file_path = os.path.join(MEDIA_FOLDER, file)
         try:
-            img = Image.open(file_path)
-            img.verify()
-            img = Image.open(file_path)
+            with Image.open(file_path) as img:  # Ensure the file is properly closed after use
+                img.verify()
+                img = Image.open(file_path)
 
-            # Combine multiple hash algorithms
-            img_hashes = {
-                "phash": imagehash.phash(img),
-                "dhash": imagehash.dhash(img),
-                "average_hash": imagehash.average_hash(img)
-            }
-            found_similar = False
-
-            for existing_hashes in hashes.values():
-                # Compare all hashes with a combined threshold
-                if all(abs(img_hashes[hash_type] - existing_hashes[hash_type]) <= similarity_threshold
-                       for hash_type in img_hashes):
-                    existing_hashes["files"].append(file)
-                    logging.info(f"Image '{file}' grouped with '{existing_hashes['files'][0]}'.")
-                    found_similar = True
-                    break
-
-            if not found_similar:
-                hashes[tuple(img_hashes.values())] = {
-                    "phash": img_hashes["phash"],
-                    "dhash": img_hashes["dhash"],
-                    "average_hash": img_hashes["average_hash"],
-                    "files": [file]
+                # Combine multiple hash algorithms
+                img_hashes = {
+                    "phash": imagehash.phash(img),
+                    "dhash": imagehash.dhash(img),
+                    "average_hash": imagehash.average_hash(img)
                 }
-                logging.info(f"Image '{file}' added as a new group.")
+                found_similar = False
+
+                for existing_hashes in hashes.values():
+                    # Compare all hashes with a combined threshold
+                    if all(abs(img_hashes[hash_type] - existing_hashes[hash_type]) <= similarity_threshold
+                           for hash_type in img_hashes):
+                        existing_hashes["files"].append(file)
+                        logging.info(f"Image '{file}' grouped with '{existing_hashes['files'][0]}'.")
+                        found_similar = True
+                        break
+
+                if not found_similar:
+                    hashes[tuple(img_hashes.values())] = {
+                        "phash": img_hashes["phash"],
+                        "dhash": img_hashes["dhash"],
+                        "average_hash": img_hashes["average_hash"],
+                        "files": [file]
+                    }
+                    logging.info(f"Image '{file}' added as a new group.")
         except Exception as e:
             logging.error(f"Error analyzing '{file}': {e}")
             fehlerhafte_bilder.append(file)
@@ -253,6 +275,11 @@ def analysiere_bilder():
         analyse_fortschritt = int(((index + 1) / total_files) * 100)  # Calculate progress
         time.sleep(0.1)  # Simulate a delay
 
+    # If only videos remain, mark the analysis as complete
+    if all(file.lower().endswith('.mp4') for file in media_files):
+        analyse_fortschritt = 100
+        logging.info("Analysis complete. Only videos remain.")
+    
     # Extract groups with more than one image
     analyse_ergebnisse = {k: v["files"] for k, v in hashes.items() if len(v["files"]) > 1}
     logging.info(f"Analysis complete. Found {len(analyse_ergebnisse)} groups with similar images.")
@@ -267,6 +294,14 @@ def dev_groups():
         })
     else:
         return jsonify({"error": "Diese Funktion ist nur im Debug-Modus verfügbar."}), 403
+
+@app.route("/dev/media_files", methods=["GET"])
+def dev_media_files():
+    """Provides the list of media files as JSON (for development purposes only)."""
+    if app.debug:  # Only available when the app is in debug mode
+        return jsonify({"media_files": media_files})
+    else:
+        return jsonify({"error": "This endpoint is only available in debug mode."}), 403
 
 @app.route("/done")
 def done():

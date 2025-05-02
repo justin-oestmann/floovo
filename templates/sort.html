@@ -44,7 +44,8 @@
             text-align: center;
         }
 
-        .image-container img {
+        .image-container img,
+        .image-container video {
             max-height: 60vh;
             max-width: 100%;
             object-fit: contain;
@@ -208,11 +209,23 @@
         </form>
         {% elif current_file %}
         <div class="alert alert-info text-center">
+            {% if current_file.lower().endswith('.mp4') %}
+            <i class="bi bi-file-earmark-play"></i> <strong>Video File!</strong> Decide whether to keep or delete the
+            video.
+            {% else %}
             <i class="bi bi-file-earmark"></i> <strong>Single Image!</strong> Decide whether to keep or delete the
             image.
+            {% endif %}
         </div>
         <div class="image-container">
+            {% if current_file.lower().endswith('.mp4') %}
+            <video controls>
+                <source src="{{ url_for('media_file', filename=current_file) }}" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+            {% else %}
             <img src="{{ url_for('media_file', filename=current_file) }}" alt="Current Image/Video">
+            {% endif %}
             <div class="button-container">
                 <form method="POST" action="{{ url_for('sort_file', filename=current_file) }}">
                     <button name="action" value="behalten" class="btn btn-success btn-lg me-2">
@@ -226,7 +239,7 @@
         </div>
         {% else %}
         <div class="alert alert-warning text-center">
-            <i class="bi bi-exclamation-circle"></i> <strong>No images to sort found!</strong>
+            <i class="bi bi-exclamation-circle"></i> <strong>No files to sort found!</strong>
         </div>
         {% endif %}
     </div>
