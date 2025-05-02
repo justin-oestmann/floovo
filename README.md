@@ -6,13 +6,32 @@ Floovo is a modern web application designed to enhance your media browsing exper
 
 ---
 
-## 🚀 Installation
+## 🚀 Quick Start (Recommended)
 
-Follow these steps to set up Floovo on your local machine:
+The easiest way to set up and run Floovo is by using the provided `startup.bat` script. Follow these steps:
+
+1. **Download the Repository**  
+   Clone or download the repository from [GitHub](https://github.com/justin-oestmann/floovo).
+
+2. **Run the Startup Script**  
+   Double-click the `startup.bat` file located in the project folder. The script will:
+   - Check if Python is installed.
+   - Verify that all required libraries are installed.
+   - Ensure the application is up-to-date by pulling the latest changes from the repository.
+   - Start the Floovo application.
+
+3. **Access the Application**  
+   Open your browser and navigate to `http://localhost:5000`.
+
+---
+
+## 🛠️ Manual Installation
+
+If you prefer to set up Floovo manually, follow these steps:
 
 1. **Clone the Repository**  
    ```bash
-   git clone https://github.com/your-repo/floovo.git
+   git clone https://github.com/justin-oestmann/floovo.git
    cd floovo
    ```
 
@@ -65,6 +84,7 @@ The project structure is as follows:
 floovo/
 ├── app.py                # Main application logic
 ├── requirements.txt      # Python dependencies
+├── startup.bat           # Quick start script
 ├── static/
 │   ├── style.css         # Custom CSS styles
 │   └── media/            # Uploaded media files
