@@ -5,6 +5,6 @@ __pycache__/
 *.sqlite3
 instance/
 .env
-static/media/*
+static/media*/*
 loeschen/*
 behalten/*
