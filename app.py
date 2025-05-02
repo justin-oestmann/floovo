@@ -143,15 +143,24 @@ def sort_file(filename):
     """Sorts a file into the Keep or Delete folder."""
     action = request.form.get("action")
     src_path = os.path.join(MEDIA_FOLDER, filename)
-    if action == "behalten":
-        shutil.move(src_path, os.path.join(BEHALTEN_FOLDER, filename))
-    elif action == "loeschen":
-        shutil.move(src_path, os.path.join(LOESCHEN_FOLDER, filename))
-    
+    dest_folder = BEHALTEN_FOLDER if action == "behalten" else LOESCHEN_FOLDER
+    dest_path = os.path.join(dest_folder, filename)
+
+    try:
+        # Notify the frontend to stop video playback
+        if filename.lower().endswith('.mp4'):
+            flash("Please ensure the video is stopped before proceeding.", "info")
+
+        shutil.move(src_path, dest_path)
+    except PermissionError:
+        # Handle locked files by replacing them instead of moving
+        logging.warning(f"PermissionError: Unable to move '{filename}'. Attempting to replace instead.")
+        os.replace(src_path, dest_path)
+
     # Remove the file from media_files after sorting
     if filename in media_files:
         media_files.remove(filename)
-    
+
     return redirect(url_for("sort_view"))
 
 @app.route("/sort/similar", methods=["POST"])
