@@ -147,9 +147,9 @@ def sort_file(filename):
     dest_path = os.path.join(dest_folder, filename)
 
     try:
-        # Notify the frontend to stop video playback
+        # Ensure the video file is not locked
         if filename.lower().endswith('.mp4'):
-            flash("Please ensure the video is stopped before proceeding.", "info")
+            time.sleep(0.1)  # Allow time for the video to be released by the media player
 
         shutil.move(src_path, dest_path)
     except PermissionError:

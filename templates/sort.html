@@ -152,8 +152,19 @@
     <script>
         document.addEventListener("DOMContentLoaded", () => {
             const videoElement = document.querySelector("video");
-            const formElements = document.querySelectorAll("form");
 
+            if (videoElement) {
+                // Fetch the video file and load it as a blob URL
+                fetch(videoElement.querySelector("source").src)
+                    .then(response => response.blob())
+                    .then(blob => {
+                        const blobUrl = URL.createObjectURL(blob);
+                        videoElement.src = blobUrl; // Set the video source to the blob URL
+                    })
+                    .catch(error => console.error("Error loading video:", error));
+            }
+
+            const formElements = document.querySelectorAll("form");
             formElements.forEach(form => {
                 form.addEventListener("submit", () => {
                     if (videoElement && !videoElement.paused) {
